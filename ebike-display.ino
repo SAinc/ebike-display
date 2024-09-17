@@ -30,6 +30,8 @@
 #define CAN_ID_2            85                  // CAN id of second controller
 #define BATTERY_CAPACITY    1398.6              // capacity of battery in Wh
 #define POWER_OFF_DELAY     2500                // delay before system turns off in ms
+#define IDLE_OFF_DELAY      300                 // delay before auto shutoff, in S
+#define MAX_TIMEOUTS        5                   // maximum number of timeouts before an error is thrown
 
 // COLORS
 #define COLOR_METER_BACKGROUND 0x18c3     // 0x1a1a1a
@@ -77,7 +79,9 @@ float batteryCurrentCapacity = 0;
 bool batteryFull = false;
 
 bool powerSwPressed = false;
-long delayTime;
+uint32_t delayTime;
+uint32_t timeoutTime;
+uint8_t timeoutCounter = 0;
 
 enum State {RUN, OFF, POWER_HELD};
 State state = RUN;
@@ -198,9 +202,26 @@ void loop(void)
                 temp = 12;
             #endif
             #ifndef TEST
+            // get values from VESC and update the display
+            // report error if unable to read
             if (getProcessTelemData())
             {
                 updateDisplay();
+                timeoutCounter = 0;
+            } else {
+                // only display error if we timeout MAX_TIMEOUTS consecutively
+                timeoutCounter++;
+                if (timeoutCounter >= MAX_TIMEOUTS) {
+                    // draw error message
+                    tft.fillScreen(TFT_BLACK);
+                    // draw ON screen
+                    tft.loadFont(Seven_Segment80_FULL);
+                    tft.setTextColor(TFT_WHITE, TFT_BLACK, true);
+                    tft.setCursor(115, 110);
+                    tft.printf("E01");
+                    tft.unloadFont();
+                    timeoutCounter = MAX_TIMEOUTS;
+                }
             }
         #endif
         }
@@ -208,7 +229,7 @@ void loop(void)
         if (!digitalRead(PIN_POWER_SW)) {
             delayTime = millis() + POWER_OFF_DELAY;
             state = POWER_HELD;
-        }
+        } else if ()
         break;
 
         case POWER_HELD:
@@ -246,9 +267,26 @@ void loop(void)
                 temp = 12;
             #endif
             #ifndef TEST
+            // get values from VESC and update the display
+            // report error if unable to read
             if (getProcessTelemData())
             {
                 updateDisplay();
+                timeoutCounter = 0;
+            } else {
+                // only display error if we timeout MAX_TIMEOUTS consecutively
+                timeoutCounter++;
+                if (timeoutCounter >= MAX_TIMEOUTS) {
+                    // draw error message
+                    tft.fillScreen(TFT_BLACK);
+                    // draw ON screen
+                    tft.loadFont(Seven_Segment80_FULL);
+                    tft.setTextColor(TFT_WHITE, TFT_BLACK, true);
+                    tft.setCursor(115, 110);
+                    tft.printf("E01");
+                    tft.unloadFont();
+                    timeoutCounter = MAX_TIMEOUTS;
+                }
             }
             #endif
         }
