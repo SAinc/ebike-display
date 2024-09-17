@@ -8,7 +8,7 @@
 #include "7-Segment34.h"
 #include "7-Segment56.h"
 #include "7-Segment154.h"
-#include "Play_Regular20.h"
+#include "7-Segment80-FULL.h"
 
 // #define DEBUG
 // #define TEST
@@ -135,7 +135,7 @@ void setup(void)
     tft.setRotation(1); // set orientation to landscape
     tft.fillScreen(TFT_BLACK);
     // draw ON screen
-    tft.loadFont(Play_Regular20);
+    tft.loadFont(Seven_Segment80_FULL);
     tft.setTextColor(TFT_WHITE, TFT_BLACK, true);
     tft.setCursor(115, 110);
     tft.printf("Starting...");
@@ -372,7 +372,7 @@ void updateDisplay()
     if (!equalFloat(speed_mph, speedPrev, 0.1))
     {
         // draw speedometer value (text)
-        tft.loadFont(Seven_Segment156);
+        tft.loadFont(Seven_Segment154);
         tft.setTextColor(COLOR_METER_BACKGROUND, TFT_BLACK);
         tft.setCursor(107, 55);
         tft.printf("88");
@@ -662,8 +662,8 @@ void getImageSelection(uint16_t *dst, int16_t x0, int16_t y0, int16_t w_dst,
 void shutdown()
 {
     tft.fillScreen(TFT_BLACK);
-    // draw ON screen
-    tft.loadFont(Play_Regular20);
+    // draw OFF screen
+    tft.loadFont(Seven_Segment80_FULL);
     tft.setTextColor(TFT_WHITE, TFT_BLACK, true);
     tft.setCursor(115, 110);
     tft.printf("OFF");
