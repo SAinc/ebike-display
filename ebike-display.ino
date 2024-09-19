@@ -5,13 +5,13 @@
 
 // images and fonts
 #include "Background.h"
+#include "Background-Blank.h"
 #include "7-Segment34.h"
 #include "7-Segment56.h"
 #include "7-Segment154.h"
-#include "7-Segment80-FULL.h"
 
 // #define DEBUG
-// #define TEST
+#define TEST
 
 // DEFINES
 #define LOOP_PERIOD         35                  // loop period in ms
@@ -42,15 +42,31 @@
 #define COLOR_METER_BAD 0xf124     // 0xfa2424
 #define COLOR_WARNING 0xfbc5        // 0xff7a2a
 #define COLOR_TEXT_SECONDARY 0xcc79 // 0xcccccc
+#define COLOR_TEXT_INACTIVE 0x31a6  // 0x333333
 
-#define POWER_METER_X 159           // power meter x coord
-#define POWER_METER_Y 108           // power meter y coord
-#define BATTERY_X 300               // battery meter x coord
+#define POWER_METER_X 240           // power meter x coord
+#define POWER_METER_Y 145           // power meter y coord
+#define BATTERY_X 452               // battery meter x coord
 #define BATTERY_Y 165               // battery meter y coord
-#define TEMP_X 5                    // temp meter x coord
-#define TEMP_Y 165                  // temp meter y coord
-#define POWER_METER_THICKNESS 10    // thickness of power meter segment
-#define POWER_METER_RADIUS 82       // radius of power meter segment
+#define TEMP_X 4                    // temp meter x coord
+#define TEMP_Y 221                  // temp meter y coord
+#define POWER_METER_THICKNESS 14    // thickness of power meter segment
+#define POWER_METER_RADIUS 109       // radius of power meter segment
+
+#define SPEED_READOUT_X     165     // X coord of speedometer value
+#define SPEED_READOUT_Y     68      // Y coord of speedometer value
+#define POWER_READOUT_X     219     // X coord of power readout
+#define POWER_READOUT_Y     231     // Y coord of power readout
+#define TEMP_READOUT_X      10      // X coord of temp readout
+#define TEMP_READOUT_Y      230     // Y coord of temp readout
+#define ODO_READOUT_X       70      // X coord of ODO readout
+#define ODO_READOUT_Y       287     // Y coord of ODO readout
+#define SOC_READOUT_X       380     // X coord of SOC readout
+#define SOC_READOUT_Y       226     // Y coord of SOC readout
+#define VBAT_READOUT_X      380     // X coord of VBAT readout
+#define VBAT_READOUT_Y      253     // Y coord of VBAT readout
+#define TRIP_READOUT_X      407     // X coord of TRIP readout
+#define TRIP_READOUT_Y      287     // Y coord of TRIP readout
 
 #define EEPROM_ADDR 0       // address to store odometer value
 #define NUM_SAMPLES_POWER 1 // number of samples to use for rolling average
@@ -136,13 +152,14 @@ void setup(void)
 #endif
 
     tft.begin();
-    tft.setRotation(1); // set orientation to landscape
-    tft.fillScreen(TFT_BLACK);
-    // draw ON screen
-    tft.loadFont(Seven_Segment80_FULL);
+    tft.setRotation(3); // set orientation to landscape
+    // draw initial background image
+    tft.pushImage(0, 0, BACKGROUND_WIDTH, BACKGROUND_HEIGHT, BackgroundImage);
+    // draw ON text
+    tft.loadFont(Seven_Segment56);
     tft.setTextColor(TFT_WHITE, TFT_BLACK, true);
-    tft.setCursor(115, 110);
-    tft.printf("Starting...");
+    tft.setCursor(POWER_READOUT_X, POWER_READOUT_Y);
+    tft.printf("ON");
     tft.unloadFont();
 
     delay(5000);
@@ -153,6 +170,9 @@ void setup(void)
     while (!vesc.getFWversion(CAN_ID_1))
     {
         delay(1);
+        // restore odometer value and battery capacity
+        EEPROM.get(EEPROM_ADDR, odometer);
+        EEPROM.get(EEPROM_ADDR + sizeof(odometer), batteryCurrentCapacity);
 #ifdef DEBUG
         Serial.println("Error: Could not connect to VESC!");
 #endif
@@ -163,12 +183,8 @@ void setup(void)
     delay(5000);
 #endif
 
-    // draw initial background image
-    tft.pushImage(0, 0, BACKGROUND_WIDTH, BACKGROUND_HEIGHT, BackgroundImage);
-
-    // restore odometer value and battery capacity
-    EEPROM.get(EEPROM_ADDR, odometer);
-    EEPROM.get(EEPROM_ADDR + sizeof(odometer), batteryCurrentCapacity);
+    // draw blank background image
+    tft.pushImage(0, 0, BACKGROUND_WIDTH, BACKGROUND_HEIGHT, Background_Blank);
 }
 
 void loop(void)
@@ -229,7 +245,7 @@ void loop(void)
         if (!digitalRead(PIN_POWER_SW)) {
             delayTime = millis() + POWER_OFF_DELAY;
             state = POWER_HELD;
-        } else if ()
+        }
         break;
 
         case POWER_HELD:
@@ -379,10 +395,10 @@ void updateDisplay()
     {
         // draw odometer text
         tft.loadFont(Seven_Segment34);
-        tft.setCursor(47, 216);
-        tft.setTextColor(COLOR_METER_BACKGROUND, TFT_BLACK);
+        tft.setCursor(ODO_READOUT_X, ODO_READOUT_Y);
+        tft.setTextColor(COLOR_TEXT_INACTIVE, TFT_BLACK);
         tft.printf("88888.8");
-        tft.setCursor(47, 216);
+        tft.setCursor(ODO_READOUT_X, ODO_READOUT_Y);
         tft.setTextColor(TFT_WHITE, TFT_BLACK);
         tft.printf("%7.1f", round(odometer, 1));
         tft.unloadFont();
@@ -396,10 +412,10 @@ void updateDisplay()
         // draw trip (text)
         odometer += tripCounter;
         tft.loadFont(Seven_Segment34);
-        tft.setTextColor(COLOR_METER_BACKGROUND, TFT_BLACK);
-        tft.setCursor(271, 216);
+        tft.setTextColor(COLOR_TEXT_INACTIVE, TFT_BLACK);
+        tft.setCursor(TRIP_READOUT_X, TRIP_READOUT_Y);
         tft.printf("888.8");
-        tft.setCursor(271, 216);
+        tft.setCursor(TRIP_READOUT_X, TRIP_READOUT_Y);
         tft.setTextColor(TFT_WHITE, TFT_BLACK);
         tft.printf("%5.1f", round(tripCounter, 1));
         tft.unloadFont();
@@ -411,10 +427,10 @@ void updateDisplay()
     {
         // draw speedometer value (text)
         tft.loadFont(Seven_Segment154);
-        tft.setTextColor(COLOR_METER_BACKGROUND, TFT_BLACK);
-        tft.setCursor(107, 55);
+        tft.setTextColor(COLOR_TEXT_INACTIVE, TFT_BLACK);
+        tft.setCursor(SPEED_READOUT_X, SPEED_READOUT_Y);
         tft.printf("88");
-        tft.setCursor(107 , 55);
+        tft.setCursor(SPEED_READOUT_X , SPEED_READOUT_Y);
         tft.setTextColor(TFT_WHITE, TFT_BLACK);
         tft.printf("%2.0f", round(std::abs(speed_mph), 0));
         tft.unloadFont();
@@ -427,13 +443,13 @@ void updateDisplay()
         // draw power indicator
         // draw power value (text)
         tft.loadFont(Seven_Segment56);
-        tft.setTextColor(COLOR_METER_BACKGROUND, TFT_BLACK);
-        tft.setCursor(144, 173);
+        tft.setTextColor(COLOR_TEXT_INACTIVE, TFT_BLACK);
+        tft.setCursor(POWER_READOUT_X, POWER_READOUT_Y);
         tft.printf("8.8");
-        tft.setCursor(144, 173);
+        tft.setCursor(POWER_READOUT_X, POWER_READOUT_Y);
         tft.setTextColor(TFT_WHITE, TFT_BLACK);
         // average both power values
-        tft.printf("%2.1f", round(std::abs(power1 + power2) / 200.0, 1));
+        tft.printf("%1.1f", round(std::abs(power1 + power2) / 2000.0, 1));
         tft.unloadFont();
         drawPowerMeter(power1, power2);
         // store current power value
@@ -446,10 +462,10 @@ void updateDisplay()
         // draw battery meter
         // draw battery percent (text)
         tft.loadFont(Seven_Segment34);
-        tft.setTextColor(COLOR_METER_BACKGROUND, TFT_BLACK);
-        tft.setCursor(253, 170);
+        tft.setTextColor(COLOR_TEXT_INACTIVE, TFT_BLACK);
+        tft.setCursor(SOC_READOUT_X, SOC_READOUT_Y);
         tft.printf("188");
-        tft.setCursor(253, 170);
+        tft.setCursor(SOC_READOUT_X, SOC_READOUT_Y);
         tft.setTextColor(TFT_WHITE, TFT_BLACK);
         tft.printf("%3.0f", round(batteryPercentage, 0));
         tft.unloadFont();
@@ -463,10 +479,10 @@ void updateDisplay()
     {
         // draw battery voltage (text)
         tft.loadFont(Seven_Segment34);
-        tft.setTextColor(COLOR_METER_BACKGROUND, TFT_BLACK);
-        tft.setCursor(253, 190);
+        tft.setTextColor(COLOR_TEXT_INACTIVE, TFT_BLACK);
+        tft.setCursor(VBAT_READOUT_X, VBAT_READOUT_Y);
         tft.printf("88.8");
-        tft.setCursor(253, 190);
+        tft.setCursor(VBAT_READOUT_X, VBAT_READOUT_Y);
         tft.setTextColor(TFT_WHITE, TFT_BLACK);
         tft.printf("%4.1f", round(vbat, 1));
         tft.unloadFont();
@@ -479,10 +495,10 @@ void updateDisplay()
         // draw temp indicator
         // draw temp (text)
         tft.loadFont(Seven_Segment34);
-        tft.setTextColor(COLOR_METER_BACKGROUND, TFT_BLACK);
-        tft.setCursor(1, 178);
+        tft.setTextColor(COLOR_TEXT_INACTIVE, TFT_BLACK);
+        tft.setCursor(TEMP_READOUT_X, TEMP_READOUT_Y);
         tft.printf("188.8");
-        tft.setCursor(1, 178);
+        tft.setCursor(TEMP_READOUT_X, TEMP_READOUT_Y);
         tft.setTextColor(TFT_WHITE, TFT_BLACK);
         tft.printf("%5.1f", round(temp, 1));
         tft.unloadFont();
@@ -576,23 +592,23 @@ void drawBatteryMeter(float val)
         batteryMeterColor = COLOR_METER_GOOD;
     }
 
-    int height = map(val, 0, 100, 160, 0);
+    int height = map(val, 0, 100, 214, 0);
 
     // if color has changed, redraw completely
     if (batteryMeterColor != batteryMeterColorPrev)
     {
-        tft.fillRect(BATTERY_X, batteryMeterPrev+5, 15, 160-batteryMeterPrev, batteryMeterColor);
+        tft.fillRect(BATTERY_X, batteryMeterPrev+7, 23, 214-batteryMeterPrev, batteryMeterColor);
         batteryMeterColorPrev = batteryMeterColor;
     }
 
     // only draw the section that changed
     if (height < batteryMeterPrev)
     {
-        tft.fillRect(BATTERY_X, height+5, 15, 160-height, batteryMeterColor);
+        tft.fillRect(BATTERY_X, height+7, 23, 214-height, batteryMeterColor);
     }
     else
     {
-        tft.fillRect(BATTERY_X, 5, 15, height, COLOR_METER_BACKGROUND);
+        tft.fillRect(BATTERY_X, 7, 23, height, COLOR_METER_BACKGROUND);
     }
 
     batteryMeterPrev = height;    // save height for next redraw
@@ -616,23 +632,23 @@ void drawTempMeter(float val)
 
     val = constrain(val, 0, 100);
 
-    int height = map(val, 0, 100, 160, 0);
+    int height = map(val, 0, 100, 214, 0);
 
     // if color has changed, redraw completely
     if (tempMeterColor != tempMeterColor_prev)
     {
-        tft.fillRect(TEMP_X, tempMeterPrev+5, 15, 160-tempMeterPrev, tempMeterColor);
+        tft.fillRect(TEMP_X, tempMeterPrev+7, 23, 214-tempMeterPrev, tempMeterColor);
         tempMeterColor_prev = tempMeterColor;
     }
 
     // only draw the section that changed
     if (height < tempMeterPrev)
     {
-        tft.fillRect(TEMP_X, height+5, 15, 160-height, tempMeterColor);
+        tft.fillRect(TEMP_X, height+7, 23, 214-height, tempMeterColor);
     }
     else
     {
-        tft.fillRect(TEMP_X, 5, 15, height, COLOR_METER_BACKGROUND);
+        tft.fillRect(TEMP_X, 7, 23, height, COLOR_METER_BACKGROUND);
     }
 
     tempMeterPrev = height;    // save height for next redraw
@@ -699,11 +715,11 @@ void getImageSelection(uint16_t *dst, int16_t x0, int16_t y0, int16_t w_dst,
  */
 void shutdown()
 {
-    tft.fillScreen(TFT_BLACK);
+    tft.pushImage(0, 0, BACKGROUND_WIDTH, BACKGROUND_HEIGHT, BackgroundImage);
     // draw OFF screen
-    tft.loadFont(Seven_Segment80_FULL);
+    tft.loadFont(Seven_Segment56);
     tft.setTextColor(TFT_WHITE, TFT_BLACK, true);
-    tft.setCursor(115, 110);
+    tft.setCursor(POWER_READOUT_X, POWER_READOUT_Y);
     tft.printf("OFF");
     tft.unloadFont();
 
