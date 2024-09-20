@@ -83,6 +83,7 @@ VescUart vesc(100);
 
 // globl vars
 uint32_t updateTime = 0; // time for next update
+uint32_t idleOffTime = 0; // time to turn off
 float batteryPercentage = 0;
 float tripCounter = 0;
 float odometer = 10;
@@ -224,6 +225,14 @@ void loop(void)
             {
                 updateDisplay();
                 timeoutCounter = 0;
+                // If motor isn't moving, set idle power-down timer
+                if (!equalFloat(vesc.data.rpm, 0, 1)) {
+                    idleOffTimer = millis() + IDLE_OFF_DELAY*1000;
+                }
+                // turn off if we are idle for IDLE_OFF_DELAY
+                if (idleOffTimer <= millis) (
+                    state = OFF;
+                )
             } else {
                 // only display error if we timeout MAX_TIMEOUTS consecutively
                 timeoutCounter++;
